@@ -26,14 +26,13 @@ import com.example.sagerecipes.ui.theme.*
 
 @Composable
 fun SpicesScreen(
+    selectedIngredients: Set<String>,
+    onIngredientToggle: (String) -> Unit,
     onAddHerbsClick: () -> Unit,
     onBackClick: () -> Unit,
     onCustomSearchClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-
-    // State tracking selected spices
-    val selectedSpices = remember { mutableStateOf(setOf("Paprika", "Turmeric", "Garlic Powder")) }
 
     val commonSpices = listOf("Paprika", "Black pepper", "Cumin", "Turmeric")
     val aromatics = listOf("Garlic Powder", "Ginger", "Cinnamon", "Cloves")
@@ -51,7 +50,7 @@ fun SpicesScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 24.dp), // Space for button
+                .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             // 2. Top Header (< Spices, Search, Filter)
@@ -72,7 +71,11 @@ fun SpicesScreen(
                                 .clip(RoundedCornerShape(50.dp))
                                 .background(Color.White.copy(alpha = 0.8f))
                         ) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+                            Icon(
+                                Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = TextPrimary
+                            )
                         }
                         Text(
                             text = "Spices",
@@ -93,7 +96,9 @@ fun SpicesScreen(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = { Text("Search Spices") },
-                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Search, contentDescription = "Search")
+                            },
                             shape = RoundedCornerShape(Radius.input),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = Color.White,
@@ -113,8 +118,11 @@ fun SpicesScreen(
             // 3. White Card Container for Spice Sections
             item {
                 Surface(
-                    shape = RoundedCornerShape(topStart = Radius.card, topEnd = Radius.card),
-                    color = Color(0xFFFDFBF7), // Warm white / cream blending with background
+                    shape = RoundedCornerShape(
+                        topStart = Radius.card,
+                        topEnd = Radius.card
+                    ),
+                    color = Color(0xFFFDFBF7),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -127,13 +135,9 @@ fun SpicesScreen(
                         SpiceCategorySection(
                             title = "Common Spices",
                             items = commonSpices,
-                            selectedItems = selectedSpices.value,
-                            onItemToggle = { item, checked ->
-                                selectedSpices.value = if (checked) {
-                                    selectedSpices.value + item
-                                } else {
-                                    selectedSpices.value - item
-                                }
+                            selectedItems = selectedIngredients,
+                            onItemToggle = { item, _ ->
+                                onIngredientToggle(item)
                             },
                             onCustomSearchClick = onCustomSearchClick
                         )
@@ -142,13 +146,9 @@ fun SpicesScreen(
                         SpiceCategorySection(
                             title = "Aromatics",
                             items = aromatics,
-                            selectedItems = selectedSpices.value,
-                            onItemToggle = { item, checked ->
-                                selectedSpices.value = if (checked) {
-                                    selectedSpices.value + item
-                                } else {
-                                    selectedSpices.value - item
-                                }
+                            selectedItems = selectedIngredients,
+                            onItemToggle = { item, _ ->
+                                onIngredientToggle(item)
                             },
                             onCustomSearchClick = onCustomSearchClick
                         )
@@ -157,13 +157,9 @@ fun SpicesScreen(
                         SpiceCategorySection(
                             title = "Specialty Blends",
                             items = specialtyBlends,
-                            selectedItems = selectedSpices.value,
-                            onItemToggle = { item, checked ->
-                                selectedSpices.value = if (checked) {
-                                    selectedSpices.value + item
-                                } else {
-                                    selectedSpices.value - item
-                                }
+                            selectedItems = selectedIngredients,
+                            onItemToggle = { item, _ ->
+                                onIngredientToggle(item)
                             },
                             onCustomSearchClick = onCustomSearchClick
                         )
@@ -174,12 +170,19 @@ fun SpicesScreen(
                         Button(
                             onClick = onAddHerbsClick,
                             shape = RoundedCornerShape(Radius.button),
-                            colors = ButtonDefaults.buttonColors(containerColor = ButtonGreen),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = ButtonGreen
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp)
                         ) {
-                            Text("Add Herbs +", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Add Herbs +",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(40.dp))
@@ -218,6 +221,7 @@ fun SpiceCategorySection(
             ) {
                 rowItems.forEach { spice ->
                     val isSelected = selectedItems.contains(spice)
+
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -234,7 +238,7 @@ fun SpiceCategorySection(
                     ) {
                         Checkbox(
                             checked = isSelected,
-                            onCheckedChange = null // Handled by row click
+                            onCheckedChange = null
                         )
                         Text(
                             text = spice,
@@ -243,6 +247,7 @@ fun SpiceCategorySection(
                         )
                     }
                 }
+
                 if (rowItems.size == 1) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -256,6 +261,8 @@ fun SpiceCategorySection(
 fun SpicesScreenPreview() {
     SageRecipesTheme {
         SpicesScreen(
+            selectedIngredients = emptySet(),
+            onIngredientToggle = {},
             onAddHerbsClick = {},
             onBackClick = {},
             onCustomSearchClick = {}
