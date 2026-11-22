@@ -1,6 +1,5 @@
 package com.example.sagerecipes.ui.screens.herbs
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,14 +26,13 @@ import com.example.sagerecipes.ui.theme.*
 
 @Composable
 fun HerbsScreen(
+    selectedIngredients: Set<String>,
+    onIngredientToggle: (String) -> Unit,
     onDisplayMealsClick: () -> Unit,
     onBackClick: () -> Unit,
     onCustomSearchClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-
-    // State tracking selected herbs
-    val selectedHerbs = remember { mutableStateOf(setOf("Oregano", "Sage", "Coriander", "Parsley")) }
 
     val freshHerbs = listOf(
         "Oregano", "Basil",
@@ -57,7 +55,7 @@ fun HerbsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 24.dp), // Space for button
+                .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             // 2. Top Header (< Herbs, Search, Filter)
@@ -78,7 +76,11 @@ fun HerbsScreen(
                                 .clip(RoundedCornerShape(50.dp))
                                 .background(Color.White.copy(alpha = 0.8f))
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = TextPrimary
+                            )
                         }
                         Text(
                             text = "Herbs",
@@ -99,7 +101,12 @@ fun HerbsScreen(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = { Text("Search Spices") },
-                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = "Search"
+                                )
+                            },
                             shape = RoundedCornerShape(Radius.input),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = Color.White,
@@ -119,27 +126,29 @@ fun HerbsScreen(
             // 3. White Card Container for Fresh Herbs Section
             item {
                 Surface(
-                    shape = RoundedCornerShape(topStart = Radius.card, topEnd = Radius.card),
+                    shape = RoundedCornerShape(
+                        topStart = Radius.card,
+                        topEnd = Radius.card
+                    ),
                     color = Color(0xFFFDFBF7),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                            .padding(
+                                horizontal = Spacing.lg,
+                                vertical = Spacing.md
+                            ),
                         verticalArrangement = Arrangement.spacedBy(Spacing.lg)
                     ) {
                         // Fresh Herbs Section
                         HerbCategorySection(
                             title = "Fresh Herbs",
                             items = freshHerbs,
-                            selectedItems = selectedHerbs.value,
-                            onItemToggle = { item, checked ->
-                                selectedHerbs.value = if (checked) {
-                                    selectedHerbs.value + item
-                                } else {
-                                    selectedHerbs.value - item
-                                }
+                            selectedItems = selectedIngredients,
+                            onItemToggle = { item, _ ->
+                                onIngredientToggle(item)
                             },
                             onCustomSearchClick = onCustomSearchClick
                         )
@@ -150,12 +159,19 @@ fun HerbsScreen(
                         Button(
                             onClick = onDisplayMealsClick,
                             shape = RoundedCornerShape(Radius.button),
-                            colors = ButtonDefaults.buttonColors(containerColor = ButtonGreen),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = ButtonGreen
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp)
                         ) {
-                            Text("Display meals", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Display meals",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(40.dp))
@@ -194,6 +210,7 @@ fun HerbCategorySection(
             ) {
                 rowItems.forEach { herb ->
                     val isSelected = selectedItems.contains(herb)
+
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -210,7 +227,7 @@ fun HerbCategorySection(
                     ) {
                         Checkbox(
                             checked = isSelected,
-                            onCheckedChange = null // Handled by row click
+                            onCheckedChange = null
                         )
                         Text(
                             text = herb,
@@ -219,6 +236,7 @@ fun HerbCategorySection(
                         )
                     }
                 }
+
                 if (rowItems.size == 1) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -232,6 +250,8 @@ fun HerbCategorySection(
 fun HerbsScreenPreview() {
     SageRecipesTheme {
         HerbsScreen(
+            selectedIngredients = emptySet(),
+            onIngredientToggle = {},
             onDisplayMealsClick = {},
             onBackClick = {},
             onCustomSearchClick = {}

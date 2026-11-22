@@ -27,14 +27,13 @@ import com.example.sagerecipes.ui.theme.*
 
 @Composable
 fun IngredientsScreen(
+    selectedIngredients: Set<String>,
+    onIngredientToggle: (String) -> Unit,
     onAddSpicesClick: () -> Unit,
     onBackClick: () -> Unit,
     onCustomSearchClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-
-    // Sample state tracking selected ingredients by name
-    val selectedIngredients = remember { mutableStateOf(setOf("Onions", "Potato")) }
 
     val popularIngredients = listOf("Tomato", "Onion", "Garlic", "Potato")
     val vegetables = listOf("Onions", "Tomato", "Potato", "Kales", "Other")
@@ -71,7 +70,11 @@ fun IngredientsScreen(
                                     .clip(RoundedCornerShape(50.dp))
                                     .background(Color.White.copy(alpha = 0.8f))
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = TextPrimary
+                                )
                             }
                             Text(
                                 text = "Ingredients",
@@ -93,7 +96,12 @@ fun IngredientsScreen(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
                                 placeholder = { Text("Search Ingredients") },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = "Search"
+                                    )
+                                },
                                 shape = RoundedCornerShape(Radius.input),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedContainerColor = Color.White,
@@ -129,25 +137,28 @@ fun IngredientsScreen(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
                         items(popularIngredients) { item ->
-                            val isSelected = selectedIngredients.value.contains(item)
+                            val isSelected = item in selectedIngredients
+
                             Surface(
                                 shape = RoundedCornerShape(Radius.card),
                                 color = Color.White,
                                 shadowElevation = 2.dp,
                                 modifier = Modifier.clickable {
-                                    selectedIngredients.value = if (isSelected) {
-                                        selectedIngredients.value - item
-                                    } else {
-                                        selectedIngredients.value + item
-                                    }
+                                    onIngredientToggle(item)
                                 }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                                    modifier = Modifier.padding(
+                                        horizontal = Spacing.md,
+                                        vertical = Spacing.sm
+                                    ),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                                 ) {
-                                    Text(text = item, style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        text = item,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
                                     Checkbox(
                                         checked = isSelected,
                                         onCheckedChange = null
@@ -163,15 +174,11 @@ fun IngredientsScreen(
             item {
                 IngredientCategorySection(
                     title = "Vegetables",
-                    selectedCount = vegetables.count { selectedIngredients.value.contains(it) },
+                    selectedCount = vegetables.count { it in selectedIngredients },
                     items = vegetables,
-                    selectedItems = selectedIngredients.value,
-                    onItemToggle = { item, checked ->
-                        selectedIngredients.value = if (checked) {
-                            selectedIngredients.value + item
-                        } else {
-                            selectedIngredients.value - item
-                        }
+                    selectedItems = selectedIngredients,
+                    onItemToggle = { item, _ ->
+                        onIngredientToggle(item)
                     },
                     onCustomSearchClick = onCustomSearchClick
                 )
@@ -181,15 +188,11 @@ fun IngredientsScreen(
             item {
                 IngredientCategorySection(
                     title = "Proteins",
-                    selectedCount = proteins.count { selectedIngredients.value.contains(it) },
+                    selectedCount = proteins.count { it in selectedIngredients },
                     items = proteins,
-                    selectedItems = selectedIngredients.value,
-                    onItemToggle = { item, checked ->
-                        selectedIngredients.value = if (checked) {
-                            selectedIngredients.value + item
-                        } else {
-                            selectedIngredients.value - item
-                        }
+                    selectedItems = selectedIngredients,
+                    onItemToggle = { item, _ ->
+                        onIngredientToggle(item)
                     },
                     onCustomSearchClick = onCustomSearchClick
                 )
@@ -212,7 +215,12 @@ fun IngredientsScreen(
                 .fillMaxWidth()
                 .height(56.dp)
         ) {
-            Text("Add Spices →", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Add Spices →",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -250,7 +258,10 @@ fun IngredientCategorySection(
                     text = "$selectedCount selected",
                     style = MaterialTheme.typography.bodySmall,
                     color = ButtonGreen,
-                    modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 4.dp)
+                    modifier = Modifier.padding(
+                        horizontal = Spacing.sm,
+                        vertical = 4.dp
+                    )
                 )
             }
         }
@@ -268,6 +279,7 @@ fun IngredientCategorySection(
                 ) {
                     rowItems.forEach { ingredient ->
                         val isSelected = selectedItems.contains(ingredient)
+
                         Surface(
                             shape = RoundedCornerShape(Radius.card),
                             color = Color.White,
@@ -315,6 +327,8 @@ fun IngredientCategorySection(
 fun IngredientsScreenPreview() {
     SageRecipesTheme {
         IngredientsScreen(
+            selectedIngredients = emptySet(),
+            onIngredientToggle = {},
             onAddSpicesClick = {},
             onBackClick = {},
             onCustomSearchClick = {}

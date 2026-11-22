@@ -8,17 +8,22 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sagerecipes.data.FavoritesManager
+import com.example.sagerecipes.ml.RecipeRecommenderEngine
 import com.example.sagerecipes.ui.theme.*
+import java.util.Locale
 
 data class IngredientItem(val name: String, val note: String)
 data class InstructionStep(val stepNumber: String, val title: String, val detail: String)
@@ -33,6 +38,56 @@ data class RecipeDetail(
 )
 
 fun getRecipeDetails(recipeId: String): RecipeDetail {
+    // 1. Check the loaded ML dataset first
+    val engineRecipe = RecipeRecommenderEngine.getRecipeById(recipeId)
+    if (engineRecipe != null) {
+        val totalTime = listOf(engineRecipe.prepTime, engineRecipe.cookTime)
+            .filter { it.isNotBlank() }
+            .joinToString(" + ")
+            .ifBlank { "30 mins" }
+
+        val desc = listOf(engineRecipe.course, engineRecipe.category)
+            .filter { it.isNotBlank() }
+            .joinToString(" • ")
+            .ifBlank { "Recommended recipe tailored to your selected ingredients." }
+
+        val mappedIngredients = engineRecipe.ingredients.map { rawIng ->
+            val formattedName = rawIng.replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+            }
+            IngredientItem(name = formattedName, note = "Ingredient")
+        }
+
+        val mappedInstructions = if (engineRecipe.instructions.isNotEmpty()) {
+            engineRecipe.instructions.mapIndexed { idx, stepText ->
+                InstructionStep(
+                    stepNumber = String.format(Locale.getDefault(), "%02d", idx + 1),
+                    title = "Step ${idx + 1}",
+                    detail = stepText
+                )
+            }
+        } else {
+            listOf(
+                InstructionStep(
+                    stepNumber = "01",
+                    title = "Prepare & Cook",
+                    detail = "Prepare all ${engineRecipe.ingredients.size} ingredients and cook according to standard ${engineRecipe.course.ifBlank { "dish" }} preparation."
+                )
+            )
+        }
+
+        return RecipeDetail(
+            title = engineRecipe.title,
+            description = desc,
+            time = totalTime,
+            heat = "Medium Heat",
+            servings = "4 Servings",
+            ingredients = mappedIngredients,
+            instructions = mappedInstructions
+        )
+    }
+
+    // 2. Fallback recipes (used in Preview or if ID is from static list)
     return when (recipeId) {
         "2" -> RecipeDetail(
             title = "Kenyan Bhajias",
@@ -105,8 +160,17 @@ fun RecipeDetailScreen(
     recipeId: String,
     onBackClick: () -> Unit
 ) {
-    val recipe = remember(recipeId) { getRecipeDetails(recipeId) }
+    val context = LocalContext.current
+    var recipe by remember(recipeId) { mutableStateOf(getRecipeDetails(recipeId)) }
+
+    // Ensure engine is initialized even if user opened this screen directly (e.g. from Favorites)
+    LaunchedEffect(recipeId) {
+        RecipeRecommenderEngine.initialize(context)
+        recipe = getRecipeDetails(recipeId)
+    }
+
     val scrollState = rememberScrollState()
+    val isFavorite = FavoritesManager.favoriteRecipeIds.contains(recipeId)
 
     Box(
         modifier = Modifier
@@ -140,13 +204,17 @@ fun RecipeDetailScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
                     }
                     IconButton(
-                        onClick = { /* Favorite toggle */ },
+                        onClick = { FavoritesManager.toggleFavorite(recipeId) },
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(50.dp))
                             .background(Color.White.copy(alpha = 0.8f))
                     ) {
-                        Icon(Icons.Default.Favorite, contentDescription = "Favorite", tint = Color.Red)
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favorite",
+                            tint = if (isFavorite) Color.Red else TextSecondary
+                        )
                     }
                 }
             }
@@ -222,6 +290,7 @@ fun RecipeDetailScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(
+                                    modifier = Modifier.weight(1f),
                                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
