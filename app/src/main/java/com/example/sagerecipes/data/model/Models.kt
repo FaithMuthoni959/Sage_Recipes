@@ -7,6 +7,9 @@ import kotlinx.serialization.Serializable
 enum class IngredientCategory {
     @SerialName("vegetable") VEGETABLE,
     @SerialName("protein") PROTEIN,
+    @SerialName("dairy") DAIRY,
+    @SerialName("grain") GRAIN,
+    @SerialName("legume") LEGUME,
     @SerialName("spice") SPICE,
     @SerialName("aromatic") AROMATIC,
     @SerialName("blend") BLEND,
