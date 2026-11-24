@@ -47,7 +47,8 @@ class IngredientsFragment : Fragment() {
                                 )
                                 .addToBackStack(null)
                                 .commit()
-                        }
+                        },
+                        onBottomNavSelected = { index -> handleBottomNav(index) }
                     )
                 }
             }

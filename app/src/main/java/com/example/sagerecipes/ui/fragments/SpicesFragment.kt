@@ -47,7 +47,8 @@ class SpicesFragment : Fragment() {
                                 )
                                 .addToBackStack(null)
                                 .commit()
-                        }
+                        },
+                        onBottomNavSelected = { index -> handleBottomNav(index) }
                     )
                 }
             }

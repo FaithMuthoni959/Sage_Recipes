@@ -29,7 +29,8 @@ class RecipeDetailFragment : Fragment() {
                 SageRecipesTheme {
                     RecipeDetailScreen(
                         recipeId = recipeId ?: "1",
-                        onBackClick = { parentFragmentManager.popBackStack() }
+                        onBackClick = { parentFragmentManager.popBackStack() },
+                        onBottomNavSelected = { index -> handleBottomNav(index) }
                     )
                 }
             }

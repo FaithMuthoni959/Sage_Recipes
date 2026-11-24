@@ -27,7 +27,8 @@ class AccountSettingsFragment : Fragment() {
                             parentFragmentManager.beginTransaction()
                                 .replace(R.id.fragment_container, LoginFragment())
                                 .commit()
-                        }
+                        },
+                        onBottomNavSelected = { index -> handleBottomNav(index) }
                     )
                 }
             }

@@ -137,41 +137,6 @@ fun PantryScreen(
                 )
             }
 
-            // 5. Suggested Shopping Banner Card
-            item {
-                Card(
-                    shape = RoundedCornerShape(Radius.card),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.lg)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(Spacing.lg),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "Suggested shopping",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Recommended based on your recent recipes",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary
-                            )
-                        }
-                        Text(text = "›", fontSize = 24.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
         }
 
         Box(
