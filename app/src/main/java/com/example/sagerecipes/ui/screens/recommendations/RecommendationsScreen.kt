@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.sagerecipes.data.FavoritesManager
 import com.example.sagerecipes.ml.RecipeRecommenderEngine
+import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
 
 data class RecipeRecommendation(
@@ -32,6 +33,8 @@ data class RecipeRecommendation(
     val matchPercentage: String,
     val time: String,
     val difficulty: String,
+    val matchedIngredients: List<String> = emptyList(),
+    val missingIngredients: List<String> = emptyList(),
     val isFavorite: Boolean = false
 )
 
@@ -39,7 +42,9 @@ data class RecipeRecommendation(
 fun RecommendationsScreen(
     selectedIngredients: List<String>,
     onRecipeClick: (String) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
@@ -111,7 +116,7 @@ fun RecommendationsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 24.dp),
+                .padding(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             // 1. Top Header
@@ -287,6 +292,17 @@ fun RecommendationsScreen(
                     }
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            SageBottomBar(
+                selectedIndex = selectedIndex,
+                onTabSelected = onBottomNavSelected
+            )
         }
     }
 }

@@ -20,13 +20,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.sagerecipes.data.FavoritesManager
+import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.screens.recommendations.RecipeRecommendation
 import com.example.sagerecipes.ui.theme.*
 
 @Composable
 fun VeganScreen(
     onRecipeClick: (String) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val recipes = listOf(
@@ -39,14 +42,18 @@ fun VeganScreen(
         onSearchChange = { searchQuery = it },
         recipes = recipes,
         onRecipeClick = onRecipeClick,
-        onBackClick = onBackClick
+        onBackClick = onBackClick,
+        selectedIndex = selectedIndex,
+        onBottomNavSelected = onBottomNavSelected
     )
 }
 
 @Composable
 fun QuickScreen(
     onRecipeClick: (String) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val recipes = listOf(
@@ -59,14 +66,18 @@ fun QuickScreen(
         onSearchChange = { searchQuery = it },
         recipes = recipes,
         onRecipeClick = onRecipeClick,
-        onBackClick = onBackClick
+        onBackClick = onBackClick,
+        selectedIndex = selectedIndex,
+        onBottomNavSelected = onBottomNavSelected
     )
 }
 
 @Composable
 fun ProteinScreen(
     onRecipeClick: (String) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val recipes = listOf(
@@ -80,14 +91,18 @@ fun ProteinScreen(
         onSearchChange = { searchQuery = it },
         recipes = recipes,
         onRecipeClick = onRecipeClick,
-        onBackClick = onBackClick
+        onBackClick = onBackClick,
+        selectedIndex = selectedIndex,
+        onBottomNavSelected = onBottomNavSelected
     )
 }
 
 @Composable
 fun DessertsScreen(
     onRecipeClick: (String) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val recipes = emptyList<RecipeRecommendation>()
@@ -98,7 +113,9 @@ fun DessertsScreen(
         onSearchChange = { searchQuery = it },
         recipes = recipes,
         onRecipeClick = onRecipeClick,
-        onBackClick = onBackClick
+        onBackClick = onBackClick,
+        selectedIndex = selectedIndex,
+        onBottomNavSelected = onBottomNavSelected
     )
 }
 
@@ -109,7 +126,9 @@ fun CategoryTemplateScreen(
     onSearchChange: (String) -> Unit,
     recipes: List<RecipeRecommendation>,
     onRecipeClick: (String) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -119,7 +138,7 @@ fun CategoryTemplateScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 24.dp),
+                .padding(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             item {
@@ -246,6 +265,17 @@ fun CategoryTemplateScreen(
                     }
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            SageBottomBar(
+                selectedIndex = selectedIndex,
+                onTabSelected = onBottomNavSelected
+            )
         }
     }
 }

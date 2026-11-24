@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +43,9 @@ class CustomIngredientViewModel : ViewModel() {
 @Composable
 fun CustomIngredientSearchScreen(
     onBackClick: () -> Unit,
-    onIngredientAdded: (String) -> Unit
+    onIngredientAdded: (String) -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     val viewModel = remember { CustomIngredientViewModel() }
@@ -54,7 +57,9 @@ fun CustomIngredientSearchScreen(
             .background(Color(0xFFF7F5F0))
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 80.dp)
         ) {
             // Top Header
             Box(
@@ -169,6 +174,17 @@ fun CustomIngredientSearchScreen(
                     }
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            SageBottomBar(
+                selectedIndex = selectedIndex,
+                onTabSelected = onBottomNavSelected
+            )
         }
     }
 }

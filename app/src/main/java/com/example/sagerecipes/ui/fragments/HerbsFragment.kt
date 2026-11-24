@@ -53,7 +53,8 @@ class HerbsFragment : Fragment() {
                                 )
                                 .addToBackStack(null)
                                 .commit()
-                        }
+                        },
+                        onBottomNavSelected = { index -> handleBottomNav(index) }
                     )
                 }
             }
