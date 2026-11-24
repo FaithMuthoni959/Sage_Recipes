@@ -9,27 +9,9 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val LightColorScheme = lightColorScheme(
-    primary = ButtonGreen,
-    onPrimary = Color.White,
-    secondary = ChipSelectedBg,
-    background = CardBackground,
-    surface = CardBackground,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary
-)
-
-private val DarkColorScheme = darkColorScheme(
-    primary = ButtonGreen,
-    onPrimary = Color.White,
-    secondary = ChipSelectedBg,
-    background = Color(0xFF1C1B1F),
-    surface = Color(0xFF1C1B1F),
-    onBackground = Color.White,
-    onSurface = Color.White
 )
 
 @Composable
