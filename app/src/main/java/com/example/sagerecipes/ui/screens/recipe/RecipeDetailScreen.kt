@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sagerecipes.data.FavoritesManager
 import com.example.sagerecipes.ml.RecipeRecommenderEngine
+import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
 import java.util.Locale
 
@@ -158,7 +159,9 @@ fun getRecipeDetails(recipeId: String): RecipeDetail {
 @Composable
 fun RecipeDetailScreen(
     recipeId: String,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
     var recipe by remember(recipeId) { mutableStateOf(getRecipeDetails(recipeId)) }
@@ -181,7 +184,7 @@ fun RecipeDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(bottom = 40.dp)
+                .padding(bottom = 90.dp)
         ) {
             // 1. Top Header Banner
             Box(
@@ -369,6 +372,17 @@ fun RecipeDetailScreen(
                     Spacer(modifier = Modifier.height(40.dp))
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            SageBottomBar(
+                selectedIndex = selectedIndex,
+                onTabSelected = onBottomNavSelected
+            )
         }
     }
 }

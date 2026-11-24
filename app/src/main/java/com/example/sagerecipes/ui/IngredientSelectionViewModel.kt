@@ -17,4 +17,21 @@ class IngredientSelectionViewModel : ViewModel() {
             selectedIngredients + name
         }
     }
+
+    fun hasMainIngredients(): Boolean {
+        return selectedIngredients.any { it !in SPICES_AND_HERBS }
+    }
+
+    companion object {
+        val SPICES_AND_HERBS = setOf(
+            // Spices & Aromatics
+            "Paprika", "Black pepper", "Cumin", "Turmeric",
+            "Garlic Powder", "Ginger", "Cinnamon", "Cloves",
+            "Garam masala", "Pilau masala", "Curry Powder",
+            // Herbs
+            "Oregano", "Basil", "Sage", "Coriander",
+            "Parsley", "Green Garlic", "Thyme", "Rosemary",
+            "Mint", "Chives", "Cilantro",
+        )
+    }
 }

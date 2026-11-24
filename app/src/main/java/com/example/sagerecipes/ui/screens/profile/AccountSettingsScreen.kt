@@ -19,13 +19,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
 
 @Composable
 fun AccountSettingsScreen(
     onBackClick: () -> Unit,
     onSaveClick: () -> Unit,
-    onDeleteAccountClick: () -> Unit
+    onDeleteAccountClick: () -> Unit,
+    selectedIndex: Int = 3,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     var name by remember { mutableStateOf("Sarah") }
     var email by remember { mutableStateOf("chef@sagerecipes.com") }
@@ -42,7 +45,7 @@ fun AccountSettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 40.dp)
+                .padding(bottom = 90.dp)
         ) {
             // Top Header
             Box(
@@ -180,6 +183,17 @@ fun AccountSettingsScreen(
                     Text("Delete Account", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            SageBottomBar(
+                selectedIndex = selectedIndex,
+                onTabSelected = onBottomNavSelected
+            )
         }
     }
 }

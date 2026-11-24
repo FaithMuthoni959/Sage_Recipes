@@ -1,5 +1,7 @@
 package com.example.sagerecipes.ui.screens.herbs
 
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,12 +19,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sagerecipes.R
+import com.example.sagerecipes.ui.IngredientSelectionViewModel
+import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
 
 @Composable
@@ -30,9 +36,19 @@ fun HerbsScreen(
     onIngredientToggle: (String) -> Unit,
     onDisplayMealsClick: () -> Unit,
     onBackClick: () -> Unit,
-    onCustomSearchClick: () -> Unit
+    onCustomSearchClick: () -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+
+    LaunchedEffect(selectedIngredients) {
+        if (selectedIngredients.any { it !in IngredientSelectionViewModel.SPICES_AND_HERBS }) {
+            errorMessage = null
+        }
+    }
 
     val freshHerbs = listOf(
         "Oregano", "Basil",
@@ -55,7 +71,7 @@ fun HerbsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 24.dp),
+                .padding(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             // 2. Top Header (< Herbs, Search, Filter)
@@ -155,9 +171,48 @@ fun HerbsScreen(
 
                         Spacer(modifier = Modifier.height(Spacing.md))
 
+                        if (errorMessage != null) {
+                            Surface(
+                                shape = RoundedCornerShape(Radius.card),
+                                color = Color(0xFFFFEBEE),
+                                border = BorderStroke(1.dp, Color(0xFFEF5350)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(Spacing.md),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = "Error",
+                                        tint = Color(0xFFD32F2F)
+                                    )
+                                    Text(
+                                        text = errorMessage!!,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFFD32F2F)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(Spacing.sm))
+                        }
+
                         // Display Meals Button
                         Button(
-                            onClick = onDisplayMealsClick,
+                            onClick = {
+                                val hasMain = selectedIngredients.any { it !in IngredientSelectionViewModel.SPICES_AND_HERBS }
+                                if (!hasMain) {
+                                    errorMessage = "Please select an ingredient to proceed"
+                                    Toast.makeText(context, "Please select an ingredient to proceed", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    errorMessage = null
+                                    onDisplayMealsClick()
+                                }
+                            },
                             shape = RoundedCornerShape(Radius.button),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = ButtonGreen
@@ -178,6 +233,17 @@ fun HerbsScreen(
                     }
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            SageBottomBar(
+                selectedIndex = selectedIndex,
+                onTabSelected = onBottomNavSelected
+            )
         }
     }
 }

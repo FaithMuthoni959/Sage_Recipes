@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.sagerecipes.data.FavoritesManager
+import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.screens.recommendations.RecipeRecommendation
 import com.example.sagerecipes.ui.theme.*
 
@@ -28,7 +29,9 @@ import com.example.sagerecipes.ui.theme.*
 fun CategoryRecipesScreen(
     categoryName: String,
     onRecipeClick: (String) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -47,7 +50,7 @@ fun CategoryRecipesScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 24.dp),
+                .padding(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             item {
@@ -157,6 +160,17 @@ fun CategoryRecipesScreen(
                     }
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            SageBottomBar(
+                selectedIndex = selectedIndex,
+                onTabSelected = onBottomNavSelected
+            )
         }
     }
 }

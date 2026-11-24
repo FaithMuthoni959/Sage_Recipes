@@ -22,7 +22,8 @@ class DessertsFragment : Fragment() {
                                 .addToBackStack(null)
                                 .commit()
                         },
-                        onBackClick = { parentFragmentManager.popBackStack() }
+                        onBackClick = { parentFragmentManager.popBackStack() },
+                        onBottomNavSelected = { index -> handleBottomNav(index) }
                     )
                 }
             }
