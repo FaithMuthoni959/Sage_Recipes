@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sagerecipes.R
+import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
 
 @Composable
@@ -30,7 +31,9 @@ fun SpicesScreen(
     onIngredientToggle: (String) -> Unit,
     onAddHerbsClick: () -> Unit,
     onBackClick: () -> Unit,
-    onCustomSearchClick: () -> Unit
+    onCustomSearchClick: () -> Unit,
+    selectedIndex: Int = 0,
+    onBottomNavSelected: (Int) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -50,7 +53,7 @@ fun SpicesScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 24.dp),
+                .padding(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             // 2. Top Header (< Spices, Search, Filter)
@@ -189,6 +192,17 @@ fun SpicesScreen(
                     }
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+        ) {
+            SageBottomBar(
+                selectedIndex = selectedIndex,
+                onTabSelected = onBottomNavSelected
+            )
         }
     }
 }

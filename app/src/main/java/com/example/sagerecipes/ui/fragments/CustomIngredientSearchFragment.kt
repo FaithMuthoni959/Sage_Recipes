@@ -23,7 +23,8 @@ class CustomIngredientSearchFragment : Fragment() {
                         onIngredientAdded = { ingredientName ->
                             // TODO: Save ingredient to partner's backend / pantry state
                             parentFragmentManager.popBackStack()
-                        }
+                        },
+                        onBottomNavSelected = { index -> handleBottomNav(index) }
                     )
                 }
             }
