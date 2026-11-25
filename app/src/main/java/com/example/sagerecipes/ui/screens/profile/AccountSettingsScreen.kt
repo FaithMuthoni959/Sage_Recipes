@@ -24,14 +24,16 @@ import com.example.sagerecipes.ui.theme.*
 
 @Composable
 fun AccountSettingsScreen(
+    initialName: String = "",
+    initialEmail: String = "",
     onBackClick: () -> Unit,
-    onSaveClick: () -> Unit,
+    onSaveClick: (newName: String) -> Unit,
     onDeleteAccountClick: () -> Unit,
     selectedIndex: Int = 3,
     onBottomNavSelected: (Int) -> Unit = {}
 ) {
-    var name by remember { mutableStateOf("Sarah") }
-    var email by remember { mutableStateOf("chef@sagerecipes.com") }
+    var name by remember(initialName) { mutableStateOf((initialName)) }
+    var email by remember(initialEmail) { mutableStateOf(initialEmail) }
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var isDarkMode by remember { mutableStateOf(false) }
@@ -157,7 +159,7 @@ fun AccountSettingsScreen(
 
                 // Save Changes Button
                 Button(
-                    onClick = onSaveClick,
+                    onClick = { onSaveClick(name) } ,
                     shape = RoundedCornerShape(Radius.button),
                     colors = ButtonDefaults.buttonColors(containerColor = ButtonGreen),
                     modifier = Modifier

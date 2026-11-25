@@ -20,8 +20,7 @@ class CustomIngredientSearchFragment : Fragment() {
                 SageRecipesTheme {
                     CustomIngredientSearchScreen(
                         onBackClick = { parentFragmentManager.popBackStack() },
-                        onIngredientAdded = { ingredientName ->
-                            // TODO: Save ingredient to partner's backend / pantry state
+                        onIngredientAdded = { _ ->
                             parentFragmentManager.popBackStack()
                         },
                         onBottomNavSelected = { index -> handleBottomNav(index) }

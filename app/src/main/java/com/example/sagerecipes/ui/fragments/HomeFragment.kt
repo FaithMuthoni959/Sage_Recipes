@@ -26,6 +26,12 @@ class HomeFragment : Fragment() {
                                 .addToBackStack(null)
                                 .commit()
                         },
+                        onRecipeClick = { recipeId ->
+                            parentFragmentManager.beginTransaction()
+                                .replace(R.id.fragment_container, RecipeDetailFragment.newInstance(recipeId.toString()))
+                                .addToBackStack(null)
+                                .commit()
+                        },
                         onCategoryClick = { categoryTitle ->
                             val fragment = when (categoryTitle.lowercase()) {
                                 "vegan" -> VeganFragment()

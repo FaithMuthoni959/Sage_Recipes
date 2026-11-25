@@ -24,6 +24,8 @@ import com.example.sagerecipes.ui.theme.*
 
 @Composable
 fun ProfileScreen(
+    userName: String = "Chef",
+    userEmail: String = "",
     onFavoriteRecipesClick: () -> Unit,
     onPantryInventoryClick: () -> Unit,
     onAccountSettingsClick: () -> Unit,
@@ -78,6 +80,7 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                     ) {
                         // Avatar placeholder
+                        // Avatar placeholder
                         Box(
                             modifier = Modifier
                                 .size(64.dp)
@@ -86,7 +89,7 @@ fun ProfileScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "S",
+                                text = userName.firstOrNull()?.uppercase() ?: "C",
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = ButtonGreen
@@ -97,16 +100,17 @@ fun ProfileScreen(
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             Text(
-                                text = "Sarah",
+                                text = userName,
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary
                             )
                             Text(
-                                text = "chef@sagerecipes.com",
+                                text = userEmail,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = TextSecondary
                             )
+
                             Spacer(modifier = Modifier.height(4.dp))
                             Surface(
                                 shape = RoundedCornerShape(50.dp),
@@ -143,7 +147,7 @@ fun ProfileScreen(
 
                     ProfileOptionRow(icon = Icons.Default.Favorite, title = "Favorite Recipes", onClick = onFavoriteRecipesClick)
                     ProfileOptionRow(icon = Icons.Default.ShoppingCart, title = "Pantry Inventory", onClick = onPantryInventoryClick)
-                    ProfileOptionRow(icon = Icons.Default.Star, title = "Dietary Preferences") { /* TODO */ }
+                    ProfileOptionRow(icon = Icons.Default.Star, title = "Dietary Preferences", onClick = onAccountSettingsClick)
                     ProfileOptionRow(icon = Icons.Default.Settings, title = "Account Settings", onClick = onAccountSettingsClick)
                     ProfileOptionRow(icon = Icons.AutoMirrored.Filled.ExitToApp, title = "Log Out", tint = Color.Red, onClick = onLogoutClick)
                 }

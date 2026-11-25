@@ -19,23 +19,63 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.sagerecipes.data.model.Ingredient
+import com.example.sagerecipes.data.repository.IngredientRepository
+import com.example.sagerecipes.data.repository.PantryRepository
 import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 class CustomIngredientViewModel : ViewModel() {
-    private val _searchResults = MutableStateFlow<List<String>>(emptyList())
-    val searchResults: StateFlow<List<String>> = _searchResults
+    private val ingredientRepo = IngredientRepository()
+    private val pantryRepo = PantryRepository()
+
+    private val _searchResults = MutableStateFlow<List<Ingredient>>(emptyList())
+    val searchResults: StateFlow<List<Ingredient>> = _searchResults
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching
 
     fun searchIngredientInDatabase(query: String) {
-        // TODO: Call your partner's backend API endpoint
-        // e.g., GET /api/ingredients/search?query=query
-        // Mock test data for now:
-        if (query.isNotBlank()) {
-            _searchResults.value = listOf("$query (From Database)", "Organic $query", "Fresh $query")
-        } else {
+        val q = query.trim()
+        if (q.isBlank()) {
             _searchResults.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            _isSearching.value = true
+            try {
+                val results = ingredientRepo.search(q)
+                if (results.isNotEmpty()) {
+                    _searchResults.value = results
+                } else {
+                    _searchResults.value = listOf(
+                        Ingredient(id = -1, name = q, category = com.example.sagerecipes.data.model.IngredientCategory.OTHER)
+                    )
+                }
+            } catch (_: Exception) {
+                _searchResults.value = listOf(
+                    Ingredient(id = -1, name = q, category = com.example.sagerecipes.data.model.IngredientCategory.OTHER)
+                )
+            } finally {
+                _isSearching.value = false
+            }
+        }
+    }
+
+    fun addToPantry(ingredient: Ingredient, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            if (ingredient.id > 0) {
+                try {
+                    pantryRepo.addOrUpdate(ingredient.id)
+                } catch (_: Exception) {
+                    // ignore
+                }
+            }
+            onComplete()
         }
     }
 }
@@ -50,6 +90,7 @@ fun CustomIngredientSearchScreen(
     var searchQuery by remember { mutableStateOf("") }
     val viewModel = remember { CustomIngredientViewModel() }
     val results by viewModel.searchResults.collectAsState()
+    val isSearching by viewModel.isSearching.collectAsState()
 
     Box(
         modifier = Modifier
@@ -123,7 +164,18 @@ fun CustomIngredientSearchScreen(
                     .padding(Spacing.lg),
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                if (results.isEmpty()) {
+                if (isSearching) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = ButtonGreen)
+                        }
+                    }
+                } else if (results.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
@@ -154,13 +206,17 @@ fun CustomIngredientSearchScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = ingredient,
+                                    text = ingredient.name,
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Medium,
                                     color = TextPrimary
                                 )
                                 Button(
-                                    onClick = { onIngredientAdded(ingredient) },
+                                    onClick = {
+                                        viewModel.addToPantry(ingredient) {
+                                            onIngredientAdded(ingredient.name)
+                                        }
+                                    },
                                     shape = RoundedCornerShape(Radius.button),
                                     colors = ButtonDefaults.buttonColors(containerColor = ButtonGreen),
                                     contentPadding = PaddingValues(horizontal = Spacing.md, vertical = 6.dp)

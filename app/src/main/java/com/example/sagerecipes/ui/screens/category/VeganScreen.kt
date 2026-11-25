@@ -20,9 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.sagerecipes.data.FavoritesManager
+import com.example.sagerecipes.data.model.RecipeSummary
+import com.example.sagerecipes.data.repository.FavoritesRepository
+import com.example.sagerecipes.data.repository.RecipeRepository
 import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.screens.recommendations.RecipeRecommendation
 import com.example.sagerecipes.ui.theme.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun VeganScreen(
@@ -31,16 +35,12 @@ fun VeganScreen(
     selectedIndex: Int = 0,
     onBottomNavSelected: (Int) -> Unit = {}
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    val recipes = listOf(
-        RecipeRecommendation("2", "Bhajias", "Crispy battered potatoes with herbs and spices.", "70% Match", "35 mins", "Easy")
-    )
-
     CategoryTemplateScreen(
         title = "Vegan Recipes",
-        searchQuery = searchQuery,
-        onSearchChange = { searchQuery = it },
-        recipes = recipes,
+        tagFilter = "vegan",
+        fallbackRecipes = listOf(
+            RecipeRecommendation("2", "Bhajias", "Crispy battered potatoes with herbs and spices.", "70% Match", "35 mins", "Easy")
+        ),
         onRecipeClick = onRecipeClick,
         onBackClick = onBackClick,
         selectedIndex = selectedIndex,
@@ -55,16 +55,12 @@ fun QuickScreen(
     selectedIndex: Int = 0,
     onBottomNavSelected: (Int) -> Unit = {}
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    val recipes = listOf(
-        RecipeRecommendation("3", "Spicy Egg Stew", "A hearty tomato and onion based stew.", "80% Match", "25 mins", "Easy")
-    )
-
     CategoryTemplateScreen(
         title = "Quick Recipes",
-        searchQuery = searchQuery,
-        onSearchChange = { searchQuery = it },
-        recipes = recipes,
+        isQuick = true,
+        fallbackRecipes = listOf(
+            RecipeRecommendation("3", "Spicy Egg Stew", "A hearty tomato and onion based stew.", "80% Match", "25 mins", "Easy")
+        ),
         onRecipeClick = onRecipeClick,
         onBackClick = onBackClick,
         selectedIndex = selectedIndex,
@@ -79,17 +75,13 @@ fun ProteinScreen(
     selectedIndex: Int = 0,
     onBottomNavSelected: (Int) -> Unit = {}
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    val recipes = listOf(
-        RecipeRecommendation("1", "Egg and Potato Curry", "A rich, flavorful Kenyan-style curry.", "98% Match", "40 mins", "Medium"),
-        RecipeRecommendation("4", "Kenyan Beef Pilau", "Authentic Swahili spiced rice cooked with tender beef chunks.", "95% Match", "45 mins", "Medium")
-    )
-
     CategoryTemplateScreen(
         title = "Protein Recipes",
-        searchQuery = searchQuery,
-        onSearchChange = { searchQuery = it },
-        recipes = recipes,
+        tagFilter = "protein",
+        fallbackRecipes = listOf(
+            RecipeRecommendation("1", "Egg and Potato Curry", "A rich, flavorful Kenyan-style curry.", "98% Match", "40 mins", "Medium"),
+            RecipeRecommendation("4", "Kenyan Beef Pilau", "Authentic Swahili spiced rice cooked with tender beef chunks.", "95% Match", "45 mins", "Medium")
+        ),
         onRecipeClick = onRecipeClick,
         onBackClick = onBackClick,
         selectedIndex = selectedIndex,
@@ -104,14 +96,10 @@ fun DessertsScreen(
     selectedIndex: Int = 0,
     onBottomNavSelected: (Int) -> Unit = {}
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    val recipes = emptyList<RecipeRecommendation>()
-
     CategoryTemplateScreen(
         title = "Desserts Recipes",
-        searchQuery = searchQuery,
-        onSearchChange = { searchQuery = it },
-        recipes = recipes,
+        tagFilter = "dessert",
+        fallbackRecipes = emptyList(),
         onRecipeClick = onRecipeClick,
         onBackClick = onBackClick,
         selectedIndex = selectedIndex,
@@ -122,14 +110,71 @@ fun DessertsScreen(
 @Composable
 fun CategoryTemplateScreen(
     title: String,
-    searchQuery: String,
-    onSearchChange: (String) -> Unit,
-    recipes: List<RecipeRecommendation>,
+    tagFilter: String? = null,
+    isQuick: Boolean = false,
+    fallbackRecipes: List<RecipeRecommendation> = emptyList(),
     onRecipeClick: (String) -> Unit,
     onBackClick: () -> Unit,
     selectedIndex: Int = 0,
     onBottomNavSelected: (Int) -> Unit = {}
 ) {
+    val recipeRepo = remember { RecipeRepository() }
+    val favoritesRepo = remember { FavoritesRepository() }
+
+    var searchQuery by remember { mutableStateOf("") }
+    var remoteRecipes by remember { mutableStateOf<List<RecipeSummary>>(emptyList()) }
+    var favoriteIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(title, tagFilter) {
+        isLoading = true
+        try {
+            favoriteIds = favoritesRepo.getFavoriteIds()
+        } catch (_: Exception) {
+            // ignore
+        }
+        try {
+            remoteRecipes = when {
+                isQuick -> recipeRepo.getQuick(maxMinutes = 30)
+                tagFilter != null -> recipeRepo.getByTag(tagFilter)
+                else -> recipeRepo.getAll()
+            }
+        } catch (_: Exception) {
+            remoteRecipes = emptyList()
+        } finally {
+            isLoading = false
+        }
+    }
+
+    val displayRecipes: List<RecipeRecommendation> = remember(remoteRecipes, fallbackRecipes, searchQuery, favoriteIds) {
+        val list = if (remoteRecipes.isNotEmpty()) {
+            remoteRecipes.map { r ->
+                val timeStr = r.cookTimeMinutes?.let { "$it mins" } ?: "30 mins"
+                val diffStr = r.difficulty?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "Medium"
+                RecipeRecommendation(
+                    id = r.id.toString(),
+                    title = r.title,
+                    description = r.description ?: "Delicious $title recipe",
+                    matchPercentage = "Featured",
+                    time = timeStr,
+                    difficulty = diffStr,
+                    isFavorite = favoriteIds.contains(r.id) || FavoritesManager.favoriteRecipeIds.contains(r.id.toString())
+                )
+            }
+        } else {
+            fallbackRecipes
+        }
+
+        if (searchQuery.isBlank()) {
+            list
+        } else {
+            list.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                        it.description.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -174,7 +219,7 @@ fun CategoryTemplateScreen(
 
                         OutlinedTextField(
                             value = searchQuery,
-                            onValueChange = onSearchChange,
+                            onValueChange = { searchQuery = it },
                             placeholder = { Text("Search $title...") },
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                             shape = RoundedCornerShape(Radius.input),
@@ -193,7 +238,18 @@ fun CategoryTemplateScreen(
                 }
             }
 
-            if (recipes.isEmpty()) {
+            if (isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = ButtonGreen)
+                    }
+                }
+            } else if (displayRecipes.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -209,8 +265,8 @@ fun CategoryTemplateScreen(
                     }
                 }
             } else {
-                items(recipes) { recipe ->
-                    val isFavorite = FavoritesManager.favoriteRecipeIds.contains(recipe.id)
+                items(displayRecipes) { recipe ->
+                    val isFav = favoriteIds.contains(recipe.id.toLongOrNull() ?: -1L) || FavoritesManager.favoriteRecipeIds.contains(recipe.id)
                     Card(
                         shape = RoundedCornerShape(Radius.card),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -236,11 +292,21 @@ fun CategoryTemplateScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary
                                 )
-                                IconButton(onClick = { FavoritesManager.toggleFavorite(recipe.id) }) {
+                                IconButton(onClick = {
+                                    FavoritesManager.toggleFavorite(recipe)
+                                    val numId = recipe.id.toLongOrNull()
+                                    if (numId != null) {
+                                        favoriteIds = if (FavoritesManager.isFavorite(recipe.id)) {
+                                            favoriteIds + numId
+                                        } else {
+                                            favoriteIds - numId
+                                        }
+                                    }
+                                }) {
                                     Icon(
-                                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                         contentDescription = "Favorite",
-                                        tint = if (isFavorite) Color.Red else TextSecondary
+                                        tint = if (isFav) Color.Red else TextSecondary
                                     )
                                 }
                             }

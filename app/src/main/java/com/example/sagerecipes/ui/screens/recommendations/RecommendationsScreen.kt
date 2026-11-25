@@ -22,9 +22,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.sagerecipes.data.FavoritesManager
+import com.example.sagerecipes.data.repository.FavoritesRepository
 import com.example.sagerecipes.ml.RecipeRecommenderEngine
 import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
+import kotlinx.coroutines.launch
 
 data class RecipeRecommendation(
     val id: String,
@@ -47,13 +49,19 @@ fun RecommendationsScreen(
     onBottomNavSelected: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val favoritesRepo = remember { FavoritesRepository() }
+
     var searchQuery by remember { mutableStateOf("") }
     var allRecommendations by remember { mutableStateOf<List<RecipeRecommendation>>(emptyList()) }
+    var favoriteIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Run on-device ML recommendation whenever selectedIngredients changes
     LaunchedEffect(selectedIngredients) {
         isLoading = true
+        try {
+            favoriteIds = favoritesRepo.getFavoriteIds()
+        } catch (_: Exception) {}
+
         val activeIngredients = selectedIngredients.ifEmpty {
             listOf("Potatoes", "Onions", "Eggs")
         }
@@ -84,6 +92,9 @@ fun RecommendationsScreen(
                 append("Matched ${item.matchedIngredients.size}/${r.ingredients.size} ingredients")
             }
 
+            val numId: Long = r.id.toLong()
+            val isFav = favoriteIds.contains(numId) || FavoritesManager.favoriteRecipeIds.contains(numId.toString())
+
             RecipeRecommendation(
                 id = r.id.toString(),
                 title = r.title,
@@ -91,17 +102,22 @@ fun RecommendationsScreen(
                 matchPercentage = "${item.matchPercent}% Match",
                 time = totalTime,
                 difficulty = difficultyLabel,
-                isFavorite = FavoritesManager.favoriteRecipeIds.contains(r.id.toString())
+                isFavorite = isFav
             )
         }
         isLoading = false
     }
 
-    val recommendations = remember(allRecommendations, searchQuery) {
+    val recommendations = remember(allRecommendations, searchQuery, favoriteIds) {
+        val list = allRecommendations.map { r ->
+            val numId = r.id.toLongOrNull() ?: -1L
+            val isFav = numId in favoriteIds || r.id in FavoritesManager.favoriteRecipeIds
+            r.copy(isFavorite = isFav)
+        }
         if (searchQuery.isBlank()) {
-            allRecommendations
+            list
         } else {
-            allRecommendations.filter {
+            list.filter {
                 it.title.contains(searchQuery, ignoreCase = true) ||
                         it.description.contains(searchQuery, ignoreCase = true)
             }
@@ -111,7 +127,7 @@ fun RecommendationsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F5F0)) // Cream background
+            .background(Color(0xFFF7F5F0))
     ) {
         LazyColumn(
             modifier = Modifier
@@ -151,7 +167,6 @@ fun RecommendationsScreen(
 
                         Spacer(modifier = Modifier.height(Spacing.md))
 
-                        // Search Bar & Filter
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -179,7 +194,7 @@ fun RecommendationsScreen(
                 }
             }
 
-            // 2. Based on your ingredients subtitle (Dynamic)
+            // 2. Subtitle
             item {
                 val ingredientsText = if (selectedIngredients.isNotEmpty()) {
                     selectedIngredients.joinToString(" • ")
@@ -207,7 +222,7 @@ fun RecommendationsScreen(
                 }
             }
 
-            // 3. Loading indicator or Recommendation Cards List
+            // 3. Loading indicator or List
             if (isLoading) {
                 item {
                     Box(
@@ -240,7 +255,6 @@ fun RecommendationsScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Match percentage badge
                                 Surface(
                                     shape = RoundedCornerShape(50.dp),
                                     color = ButtonGreen.copy(alpha = 0.2f)
@@ -253,12 +267,21 @@ fun RecommendationsScreen(
                                         modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 4.dp)
                                     )
                                 }
-                                val isFavorite = FavoritesManager.favoriteRecipeIds.contains(recipe.id)
-                                IconButton(onClick = { FavoritesManager.toggleFavorite(recipe.id) }) {
+                                IconButton(onClick = {
+                                    FavoritesManager.toggleFavorite(recipe)
+                                    val numId = recipe.id.toLongOrNull()
+                                    if (numId != null) {
+                                        favoriteIds = if (FavoritesManager.isFavorite(recipe.id)) {
+                                            favoriteIds + numId
+                                        } else {
+                                            favoriteIds - numId
+                                        }
+                                    }
+                                }) {
                                     Icon(
-                                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                        imageVector = if (recipe.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                                         contentDescription = "Favorite",
-                                        tint = if (isFavorite) Color.Red else TextSecondary
+                                        tint = if (recipe.isFavorite) Color.Red else TextSecondary
                                     )
                                 }
                             }

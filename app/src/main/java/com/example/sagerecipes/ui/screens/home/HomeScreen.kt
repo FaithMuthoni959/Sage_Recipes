@@ -1,5 +1,6 @@
 package com.example.sagerecipes.ui.screens.home
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,38 +9,76 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sagerecipes.R
+import com.example.sagerecipes.data.model.RecipeSummary
+import com.example.sagerecipes.data.repository.RecipeRepository
 import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
+import kotlinx.coroutines.delay
 
 data class CategoryItem(val title: String, val iconRes: Int)
 
 @Composable
 fun HomeScreen(
+    firstName: String = "",
     onAddIngredientsClick: () -> Unit,
     onCategoryClick: (String) -> Unit,
+    onRecipeClick: (Long) -> Unit = {},
     onAccountSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onBottomNavSelected: (Int) -> Unit
 ) {
-    var searchQuery by remember { mutableStateOf("") }
+    val recipeRepo = remember { RecipeRepository() }
+    val focusManager = LocalFocusManager.current
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf<List<RecipeSummary>>(emptyList()) }
+    var isSearching by remember { mutableStateOf(false) }
+    var searchError by remember { mutableStateOf<String?>(null) }
     var showMenu by remember { mutableStateOf(false) }
+
+    LaunchedEffect(searchQuery) {
+        val q = searchQuery.trim()
+        if (q.isEmpty()) {
+            searchResults = emptyList()
+            isSearching = false
+            searchError = null
+            return@LaunchedEffect
+        }
+        isSearching = true
+        searchError = null
+        delay(350)
+        try {
+            searchResults = recipeRepo.search(q)
+        } catch (e: Exception) {
+            Log.e("SageSearch", "Search failed for '$q'", e)
+            searchError = e.message ?: "Search failed"
+            searchResults = emptyList()
+        } finally {
+            isSearching = false
+        }
+    }
 
     val categories = listOf(
         CategoryItem("Vegan", R.drawable.category_vegan_food),
@@ -51,7 +90,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F5F0)) // Cream background
+            .background(Color(0xFFF7F5F0))
     ) {
         Column(
             modifier = Modifier
@@ -100,9 +139,7 @@ fun HomeScreen(
                                 )
                                 DropdownMenuItem(
                                     text = { Text("About Sage Recipes") },
-                                    onClick = {
-                                        showMenu = false
-                                    }
+                                    onClick = { showMenu = false }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Log Out") },
@@ -118,7 +155,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(Spacing.md))
 
                     Text(
-                        text = "Hello",
+                        text = if (firstName.isNotBlank()) "Hello, $firstName" else "Hello",
                         color = Color.White,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
@@ -131,28 +168,98 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(Spacing.lg))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
-                    ) {
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            placeholder = { Text("Search recipes, ingredients...") },
-                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                            shape = RoundedCornerShape(Radius.input),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White,
-                                disabledContainerColor = Color.White,
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(56.dp)
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search recipes...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Clear")
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(
+                            onSearch = { focusManager.clearFocus() },
+                            onDone = { focusManager.clearFocus() }
+                        ),
+                        shape = RoundedCornerShape(Radius.input),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            disabledContainerColor = Color.White,
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                    )
+                }
+            }
+
+            // Live Search Results (when user types in search bar)
+            if (searchQuery.isNotBlank()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                ) {
+                    Text(
+                        text = when {
+                            isSearching -> "Searching..."
+                            searchError != null -> "Search Error"
+                            else -> "Search Results (${searchResults.size})"
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    if (searchError != null) {
+                        Text(
+                            text = searchError!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
                         )
+                    } else if (!isSearching && searchResults.isEmpty()) {
+                        Text(
+                            text = "No recipes found for \"$searchQuery\"",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    }
+                    searchResults.forEach { recipe ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onRecipeClick(recipe.id) },
+                            shape = RoundedCornerShape(Radius.card),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Column(modifier = Modifier.padding(Spacing.md)) {
+                                Text(
+                                    text = recipe.title,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                                val meta = listOfNotNull(
+                                    recipe.cookTimeMinutes?.let { "$it min" },
+                                    recipe.difficulty?.name
+                                ).joinToString(" • ")
+                                if (meta.isNotEmpty()) {
+                                    Text(
+                                        text = meta,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TextSecondary
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -163,19 +270,12 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(Spacing.lg)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Categories",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-
-                }
+                Text(
+                    text = "Categories",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
 
                 Spacer(modifier = Modifier.height(Spacing.md))
 
@@ -281,19 +381,5 @@ fun HomeScreen(
                 onTabSelected = onBottomNavSelected
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    SageRecipesTheme {
-        HomeScreen(
-            onAddIngredientsClick = {},
-            onCategoryClick = {},
-            onAccountSettingsClick = {},
-            onLogoutClick = {},
-            onBottomNavSelected = {}
-        )
     }
 }

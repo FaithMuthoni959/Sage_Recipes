@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.sagerecipes.data.FavoritesManager
+import com.example.sagerecipes.data.repository.FavoritesRepository
 import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.screens.recommendations.RecipeRecommendation
 import com.example.sagerecipes.ui.theme.*
@@ -26,14 +27,38 @@ fun FavoritesScreen(
     onRecipeClick: (String) -> Unit,
     onBottomNavSelected: (Int) -> Unit
 ) {
-    val allRecipes = listOf(
-        RecipeRecommendation("1", "Egg and Potato Curry", "A rich, flavorful Kenyan-style curry.", "98% Match", "40 mins", "Medium"),
-        RecipeRecommendation("2", "Bhajias", "Crispy battered potatoes with herbs and spices.", "70% Match", "35 mins", "Easy"),
-        RecipeRecommendation("3", "Spicy Egg Stew", "A hearty tomato and onion based stew.", "80% Match", "25 mins", "Easy"),
-        RecipeRecommendation("4", "Kenyan Beef Pilau", "Authentic Swahili spiced rice cooked with tender beef chunks.", "95% Match", "45 mins", "Medium")
-    )
+    val favoritesRepo = remember { FavoritesRepository() }
+    var isLoading by remember { mutableStateOf(false) }
 
-    val favoriteRecipes = allRecipes.filter { FavoritesManager.favoriteRecipeIds.contains(it.id) }
+    LaunchedEffect(Unit) {
+        isLoading = true
+        try {
+            val remoteFavorites = favoritesRepo.getFavorites()
+            if (remoteFavorites.isNotEmpty()) {
+                val mapped = remoteFavorites.map { fav ->
+                    val r = fav.recipe
+                    val timeStr = r.cookTimeMinutes?.let { "$it mins" } ?: "30 mins"
+                    val diffStr = r.difficulty?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "Medium"
+                    RecipeRecommendation(
+                        id = r.id.toString(),
+                        title = r.title,
+                        description = r.description ?: "Saved favorite recipe",
+                        matchPercentage = "Favorite",
+                        time = timeStr,
+                        difficulty = diffStr,
+                        isFavorite = true
+                    )
+                }
+                FavoritesManager.syncFromRemote(mapped)
+            }
+        } catch (_: Exception) {
+            // keep local favorites
+        } finally {
+            isLoading = false
+        }
+    }
+
+    val favoriteRecipes = FavoritesManager.favorites
 
     Box(
         modifier = Modifier
@@ -62,7 +87,18 @@ fun FavoritesScreen(
                 }
             }
 
-            if (favoriteRecipes.isEmpty()) {
+            if (isLoading && favoriteRecipes.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 80.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = ButtonGreen)
+                    }
+                }
+            } else if (favoriteRecipes.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -104,7 +140,9 @@ fun FavoritesScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary
                                 )
-                                IconButton(onClick = { FavoritesManager.toggleFavorite(recipe.id) }) {
+                                IconButton(onClick = {
+                                    FavoritesManager.toggleFavorite(recipe)
+                                }) {
                                     Icon(
                                         imageVector = Icons.Default.Favorite,
                                         contentDescription = "Favorite",
