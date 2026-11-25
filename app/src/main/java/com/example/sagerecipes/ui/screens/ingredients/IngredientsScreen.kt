@@ -2,7 +2,6 @@ package com.example.sagerecipes.ui.screens.ingredients
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,11 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sagerecipes.data.model.IngredientCategory
+import com.example.sagerecipes.data.repository.IngredientRepository
 import com.example.sagerecipes.ui.IngredientSelectionViewModel
 import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
@@ -40,9 +40,31 @@ fun IngredientsScreen(
     selectedIndex: Int = 0,
     onBottomNavSelected: (Int) -> Unit = {}
 ) {
+    val ingredientRepo = remember { IngredientRepository() }
     var searchQuery by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+
+    var remotePopular by remember { mutableStateOf<List<String>>(emptyList()) }
+    var remoteVeggies by remember { mutableStateOf<List<String>>(emptyList()) }
+    var remoteProteins by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val pop = ingredientRepo.getPopular(8)
+            if (pop.isNotEmpty()) remotePopular = pop.map { it.name }
+        } catch (_: Exception) {}
+
+        try {
+            val veg = ingredientRepo.getByCategories(IngredientCategory.VEGETABLE)
+            if (veg.isNotEmpty()) remoteVeggies = veg.map { it.name } + "Other"
+        } catch (_: Exception) {}
+
+        try {
+            val prot = ingredientRepo.getByCategories(IngredientCategory.PROTEIN)
+            if (prot.isNotEmpty()) remoteProteins = prot.map { it.name } + "Other"
+        } catch (_: Exception) {}
+    }
 
     LaunchedEffect(selectedIngredients) {
         if (selectedIngredients.any { it !in IngredientSelectionViewModel.SPICES_AND_HERBS }) {
@@ -50,19 +72,34 @@ fun IngredientsScreen(
         }
     }
 
-    val popularIngredients = listOf("Tomato", "Onion", "Garlic", "Potato")
-    val vegetables = listOf("Onions", "Tomato", "Potato", "Kales", "Other")
-    val proteins = listOf("Beef", "Eggs", "Chicken", "Dairy Products", "Other")
+    val popularIngredients = remember(remotePopular) {
+        remotePopular.ifEmpty { listOf("Tomato", "Onion", "Garlic", "Potato") }
+    }
+    val rawVegetables = remember(remoteVeggies) {
+        remoteVeggies.ifEmpty { listOf("Onions", "Tomato", "Potato", "Kales", "Other") }
+    }
+    val rawProteins = remember(remoteProteins) {
+        remoteProteins.ifEmpty { listOf("Beef", "Eggs", "Chicken", "Dairy Products", "Other") }
+    }
+
+    val vegetables = remember(rawVegetables, searchQuery) {
+        if (searchQuery.isBlank()) rawVegetables
+        else rawVegetables.filter { it.contains(searchQuery, ignoreCase = true) || it == "Other" }
+    }
+    val proteins = remember(rawProteins, searchQuery) {
+        if (searchQuery.isBlank()) rawProteins
+        else rawProteins.filter { it.contains(searchQuery, ignoreCase = true) || it == "Other" }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F5F0)) // Cream background
+            .background(Color(0xFFF7F5F0))
     ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 140.dp), // Space for button + bottom bar
+                .padding(bottom = 140.dp),
             verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
             // 1. Top Header
@@ -101,7 +138,6 @@ fun IngredientsScreen(
 
                         Spacer(modifier = Modifier.height(Spacing.md))
 
-                        // Search Bar & Filter
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -213,7 +249,6 @@ fun IngredientsScreen(
                 )
             }
 
-            // Bottom Spacing for button + nav bar
             item {
                 Spacer(modifier = Modifier.height(140.dp))
             }
@@ -331,7 +366,6 @@ fun IngredientCategorySection(
 
         Spacer(modifier = Modifier.height(Spacing.sm))
 
-        // Grid/Card list of items
         Column(
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {

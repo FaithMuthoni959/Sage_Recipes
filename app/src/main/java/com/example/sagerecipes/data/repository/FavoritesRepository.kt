@@ -80,10 +80,14 @@ class FavoritesRepository {
     }
 
     private suspend fun lastMadeByRecipe(): Map<Long, Instant> =
-        client.from("cook_history").select(Columns.list("recipe_id", "made_at"))
-            .decodeList<CookTimeDto>()
-            .groupBy { it.recipeId }
-            .mapValues { (_, entries) -> entries.maxOf { parse(it.madeAt) } }
+        try {
+            client.from("cook_history").select(Columns.list("recipe_id", "made_at"))
+                .decodeList<CookTimeDto>()
+                .groupBy { it.recipeId }
+                .mapValues { (_, entries) -> entries.maxOf { parse(it.madeAt) } }
+        } catch (_: Exception) {
+            emptyMap()
+        }
 
     private fun parse(value: String): Instant = OffsetDateTime.parse(value).toInstant()
 }

@@ -26,7 +26,7 @@ import com.example.sagerecipes.ui.theme.*
 
 @Composable
 fun RegisterScreen(
-    onRegisterClick: (email: String, name: String, password: String) -> Unit,
+    onRegisterClick: (email: String, name: String, password: String, confirmPassword: String) -> Unit,
     onLoginLinkClick: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
@@ -210,7 +210,7 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(Spacing.lg))
 
                 Button(
-                    onClick = { onRegisterClick(email, name, password) },
+                    onClick = { onRegisterClick(email, name, password, confirmPassword) },
                     shape = RoundedCornerShape(Radius.button),
                     colors = ButtonDefaults.buttonColors(containerColor = ButtonGreen),
                     modifier = Modifier
@@ -244,6 +244,6 @@ fun RegisterScreen(
 @Composable
 fun RegisterScreenPreview() {
     SageRecipesTheme {
-        RegisterScreen(onRegisterClick = { _, _, _ -> }, onLoginLinkClick = {})
+        RegisterScreen(onRegisterClick = { _, _, _, _ -> }, onLoginLinkClick = {})
     }
 }
