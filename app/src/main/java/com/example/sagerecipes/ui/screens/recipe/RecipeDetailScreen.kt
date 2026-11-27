@@ -72,9 +72,8 @@ fun RecipeDetailScreen(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .verticalScroll(scrollState)
-                .padding(bottom = 90.dp)
         ) {
             // 1. Top Header Banner
             Box(
@@ -313,11 +312,12 @@ fun RecipeDetailScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(40.dp))
+                            Spacer(modifier = Modifier.height(120.dp))
                         }
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(120.dp))
         }
 
         Box(

@@ -11,12 +11,7 @@ object FavoritesManager {
     private val scope = CoroutineScope(Dispatchers.IO)
     private val repo = FavoritesRepository()
 
-    private var _favorites = mutableStateOf<List<RecipeRecommendation>>(
-        listOf(
-            RecipeRecommendation("1", "Egg and Potato Curry", "A rich, flavorful Kenyan-style curry.", "98% Match", "40 mins", "Medium", isFavorite = true),
-            RecipeRecommendation("2", "Bhajias", "Crispy battered potatoes with herbs and spices.", "70% Match", "35 mins", "Easy", isFavorite = true)
-        )
-    )
+    private var _favorites = mutableStateOf<List<RecipeRecommendation>>(emptyList())
 
     val favorites: List<RecipeRecommendation>
         get() = _favorites.value

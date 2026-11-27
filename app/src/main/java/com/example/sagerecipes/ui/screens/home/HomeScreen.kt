@@ -47,6 +47,7 @@ fun HomeScreen(
     onCategoryClick: (String) -> Unit,
     onRecipeClick: (Long) -> Unit = {},
     onAccountSettingsClick: () -> Unit,
+    onAboutClick: () -> Unit = {},
     onLogoutClick: () -> Unit,
     onBottomNavSelected: (Int) -> Unit
 ) {
@@ -90,7 +91,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F5F0))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -139,7 +140,10 @@ fun HomeScreen(
                                 )
                                 DropdownMenuItem(
                                     text = { Text("About Sage Recipes") },
-                                    onClick = { showMenu = false }
+                                    onClick = {
+                                        showMenu = false
+                                        onAboutClick()
+                                    }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Log Out") },
@@ -287,7 +291,7 @@ fun HomeScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(Radius.card))
-                                .background(Color.White)
+                                .background(MaterialTheme.colorScheme.surface)
                                 .clickable { onCategoryClick(category.title) }
                                 .padding(Spacing.md)
                         ) {

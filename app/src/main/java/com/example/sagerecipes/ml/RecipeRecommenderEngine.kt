@@ -365,6 +365,13 @@ object RecipeRecommenderEngine {
         return if (denom > 0.0) dot / denom else 0.0
     }
 
+    fun getAllRecipeIngredients(): List<String> {
+        return recipes.flatMap { it.ingredients }
+            .map { it.lowercase().trim().replaceFirstChar { c -> c.uppercase() } }
+            .distinct()
+            .sorted()
+    }
+
     fun getRecipeById(id: String): EngineRecipe? {
         val intId = id.toIntOrNull() ?: return null
         return recipes.find { it.id == intId }

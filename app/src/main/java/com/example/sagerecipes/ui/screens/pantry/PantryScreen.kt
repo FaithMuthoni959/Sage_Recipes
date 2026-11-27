@@ -1,11 +1,8 @@
 package com.example.sagerecipes.ui.screens.pantry
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -19,14 +16,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.sagerecipes.data.model.IngredientCategory
 import com.example.sagerecipes.data.model.PantryItem as DbPantryItem
 import com.example.sagerecipes.data.repository.PantryRepository
 import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
 import kotlinx.coroutines.launch
 
-data class UiPantryItem(val id: Long?, val name: String, val category: String)
+data class UiPantryItem(val id: Long?, val name: String)
 
 @Composable
 fun PantryScreen(
@@ -51,39 +47,24 @@ fun PantryScreen(
         }
     }
 
-    val fallbackEssentials = remember {
+    val fallbackItems = remember {
         listOf(
-            UiPantryItem(null, "Olive Oil", "Essentials"),
-            UiPantryItem(null, "Flour", "Essentials"),
-            UiPantryItem(null, "Rice", "Essentials")
-        )
-    }
-    val fallbackVeggies = remember {
-        listOf(
-            UiPantryItem(null, "Spinach", "Vegetables"),
-            UiPantryItem(null, "Tomatoes", "Vegetables")
-        )
-    }
-    val fallbackMeats = remember {
-        listOf(
-            UiPantryItem(null, "Chicken", "Meats")
+            UiPantryItem(null, "Olive Oil"),
+            UiPantryItem(null, "Flour"),
+            UiPantryItem(null, "Rice"),
+            UiPantryItem(null, "Spinach"),
+            UiPantryItem(null, "Tomatoes"),
+            UiPantryItem(null, "Chicken")
         )
     }
 
-    val allUiItems: List<UiPantryItem> = remember(remotePantry, fallbackEssentials, fallbackVeggies, fallbackMeats) {
+    val allUiItems: List<UiPantryItem> = remember(remotePantry, fallbackItems) {
         if (remotePantry.isNotEmpty()) {
             remotePantry.map { p ->
-                val catName = when (p.ingredient.category) {
-                    IngredientCategory.VEGETABLE -> "Vegetables"
-                    IngredientCategory.PROTEIN -> "Meats"
-                    IngredientCategory.SPICE, IngredientCategory.HERB, IngredientCategory.AROMATIC, IngredientCategory.BLEND -> "Spices & Herbs"
-                    IngredientCategory.STAPLE, IngredientCategory.GRAIN, IngredientCategory.DAIRY, IngredientCategory.LEGUME -> "Essentials"
-                    else -> "Other Essentials"
-                }
-                UiPantryItem(id = p.ingredient.id, name = p.ingredient.name, category = catName)
+                UiPantryItem(id = p.ingredient.id, name = p.ingredient.name)
             }
         } else {
-            fallbackEssentials + fallbackVeggies + fallbackMeats
+            fallbackItems
         }
     }
 
@@ -91,10 +72,6 @@ fun PantryScreen(
         if (searchQuery.isBlank()) allUiItems
         else allUiItems.filter { it.name.contains(searchQuery, ignoreCase = true) }
     }
-
-    val essentials = filteredUiItems.filter { it.category == "Essentials" || it.category == "Other Essentials" }
-    val vegetables = filteredUiItems.filter { it.category == "Vegetables" }
-    val meats = filteredUiItems.filter { it.category == "Meats" || it.category == "Spices & Herbs" }
 
     fun removeItem(item: UiPantryItem) {
         if (item.id != null) {
@@ -112,7 +89,7 @@ fun PantryScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F5F0))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         LazyColumn(
             modifier = Modifier
@@ -177,33 +154,10 @@ fun PantryScreen(
                 }
             } else {
                 item {
-                    PantryCategoryRow(
-                        title = "Pantry Essentials",
-                        itemCount = "${essentials.size} items",
-                        items = essentials,
-                        showAddButton = true,
-                        onAddCustomClick = onAddCustomClick,
-                        onRemoveClick = ::removeItem
-                    )
-                }
-
-                item {
-                    PantryCategoryRow(
-                        title = "Vegetables and greens",
-                        itemCount = "${vegetables.size} items",
-                        items = vegetables,
-                        showAddButton = true,
-                        onAddCustomClick = onAddCustomClick,
-                        onRemoveClick = ::removeItem
-                    )
-                }
-
-                item {
-                    PantryCategoryRow(
-                        title = "Proteins and Spices",
-                        itemCount = "${meats.size} items",
-                        items = meats,
-                        showAddButton = true,
+                    PantryIngredientsSection(
+                        title = "Ingredients available",
+                        itemCount = "${filteredUiItems.size} items",
+                        items = filteredUiItems,
                         onAddCustomClick = onAddCustomClick,
                         onRemoveClick = ::removeItem
                     )
@@ -225,11 +179,10 @@ fun PantryScreen(
 }
 
 @Composable
-fun PantryCategoryRow(
+fun PantryIngredientsSection(
     title: String,
     itemCount: String,
     items: List<UiPantryItem>,
-    showAddButton: Boolean,
     onAddCustomClick: () -> Unit,
     onRemoveClick: (UiPantryItem) -> Unit = {}
 ) {
@@ -263,82 +216,79 @@ fun PantryCategoryRow(
             }
         }
 
-        Spacer(modifier = Modifier.height(Spacing.sm))
+        Spacer(modifier = Modifier.height(Spacing.md))
 
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-        ) {
-            items(items) { item ->
-                Surface(
-                    shape = RoundedCornerShape(Radius.card),
-                    color = Color.White,
-                    shadowElevation = 2.dp,
-                    modifier = Modifier.size(width = 90.dp, height = 95.dp)
+        if (items.isEmpty()) {
+            Text(
+                text = "No ingredients found in pantry.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary
+            )
+            Spacer(modifier = Modifier.height(Spacing.md))
+        } else {
+            items.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                 ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(Spacing.xs),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                    rowItems.forEach { item ->
+                        Surface(
+                            shape = RoundedCornerShape(Radius.card),
+                            color = MaterialTheme.colorScheme.surface,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Text(
-                                text = item.name,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = TextPrimary,
-                                maxLines = 2
-                            )
-                        }
-
-                        if (item.id != null) {
-                            IconButton(
-                                onClick = { onRemoveClick(item) },
+                            Row(
                                 modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .size(24.dp)
-                                    .padding(2.dp)
+                                    .fillMaxWidth()
+                                    .padding(Spacing.md),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Remove",
-                                    tint = Color.Red.copy(alpha = 0.7f),
-                                    modifier = Modifier.size(16.dp)
+                                Text(
+                                    text = item.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary,
+                                    modifier = Modifier.weight(1f)
                                 )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (showAddButton) {
-                item {
-                    Surface(
-                        shape = RoundedCornerShape(Radius.card),
-                        color = Color.White,
-                        shadowElevation = 2.dp,
-                        modifier = Modifier
-                            .size(width = 90.dp, height = 95.dp)
-                            .clickable { onAddCustomClick() }
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(50.dp),
-                                color = ButtonGreen.copy(alpha = 0.2f),
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Add, contentDescription = "Add", tint = ButtonGreen)
+                                if (item.id != null) {
+                                    IconButton(
+                                        onClick = { onRemoveClick(item) },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Remove",
+                                            tint = Color.Red.copy(alpha = 0.7f),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
+            Spacer(modifier = Modifier.height(Spacing.md))
+        }
+
+        OutlinedButton(
+            onClick = onAddCustomClick,
+            shape = RoundedCornerShape(Radius.button),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = ButtonGreen),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Add", tint = ButtonGreen)
+            Spacer(modifier = Modifier.width(Spacing.xs))
+            Text("+ Add custom ingredient to pantry", fontWeight = FontWeight.Bold)
         }
     }
 }
