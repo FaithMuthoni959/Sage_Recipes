@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -24,11 +25,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.sagerecipes.data.model.IngredientCategory
 import com.example.sagerecipes.data.repository.IngredientRepository
 import com.example.sagerecipes.ui.IngredientSelectionViewModel
 import com.example.sagerecipes.ui.components.SageBottomBar
 import com.example.sagerecipes.ui.theme.*
+import kotlinx.coroutines.delay
 
 @Composable
 fun IngredientsScreen(
@@ -40,30 +41,56 @@ fun IngredientsScreen(
     selectedIndex: Int = 0,
     onBottomNavSelected: (Int) -> Unit = {}
 ) {
+    val context = LocalContext.current
     val ingredientRepo = remember { IngredientRepository() }
+
     var searchQuery by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val context = LocalContext.current
+    var remoteSearchResults by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isSearching by remember { mutableStateOf(false) }
 
-    var remotePopular by remember { mutableStateOf<List<String>>(emptyList()) }
-    var remoteVeggies by remember { mutableStateOf<List<String>>(emptyList()) }
-    var remoteProteins by remember { mutableStateOf<List<String>>(emptyList()) }
+    val popularIngredients = remember {
+        listOf("Tomato", "Onion", "Garlic", "Potato", "Chicken", "Eggs", "Beef", "Rice")
+    }
+    val vegetables = remember {
+        listOf("Onions", "Tomato", "Potato", "Kales", "Spinach", "Carrots", "Other")
+    }
+    val proteins = remember {
+        listOf("Beef", "Eggs", "Chicken", "Dairy Products", "Fish", "Other")
+    }
 
-    LaunchedEffect(Unit) {
+    // Combine local items for instant search matching
+    val localMatches = remember(searchQuery) {
+        val q = searchQuery.trim()
+        if (q.isBlank()) emptyList()
+        else (popularIngredients + vegetables + proteins)
+            .filter { it != "Other" && it.contains(q, ignoreCase = true) }
+    }
+
+    // Debounced remote search
+    LaunchedEffect(searchQuery) {
+        val q = searchQuery.trim()
+        if (q.isBlank()) {
+            remoteSearchResults = emptyList()
+            isSearching = false
+            return@LaunchedEffect
+        }
+        isSearching = true
+        delay(250)
         try {
-            val pop = ingredientRepo.getPopular(8)
-            if (pop.isNotEmpty()) remotePopular = pop.map { it.name }
-        } catch (_: Exception) {}
+            val remote = ingredientRepo.search(q, limit = 15)
+            remoteSearchResults = remote.map { it.name }
+        } catch (_: Exception) {
+            remoteSearchResults = emptyList()
+        } finally {
+            isSearching = false
+        }
+    }
 
-        try {
-            val veg = ingredientRepo.getByCategories(IngredientCategory.VEGETABLE)
-            if (veg.isNotEmpty()) remoteVeggies = veg.map { it.name } + "Other"
-        } catch (_: Exception) {}
-
-        try {
-            val prot = ingredientRepo.getByCategories(IngredientCategory.PROTEIN)
-            if (prot.isNotEmpty()) remoteProteins = prot.map { it.name } + "Other"
-        } catch (_: Exception) {}
+    val displaySearchResults = remember(localMatches, remoteSearchResults) {
+        (localMatches + remoteSearchResults)
+            .map { it.trim().replaceFirstChar { c -> c.uppercase() } }
+            .distinctBy { it.lowercase() }
     }
 
     LaunchedEffect(selectedIngredients) {
@@ -72,29 +99,10 @@ fun IngredientsScreen(
         }
     }
 
-    val popularIngredients = remember(remotePopular) {
-        remotePopular.ifEmpty { listOf("Tomato", "Onion", "Garlic", "Potato") }
-    }
-    val rawVegetables = remember(remoteVeggies) {
-        remoteVeggies.ifEmpty { listOf("Onions", "Tomato", "Potato", "Kales", "Other") }
-    }
-    val rawProteins = remember(remoteProteins) {
-        remoteProteins.ifEmpty { listOf("Beef", "Eggs", "Chicken", "Dairy Products", "Other") }
-    }
-
-    val vegetables = remember(rawVegetables, searchQuery) {
-        if (searchQuery.isBlank()) rawVegetables
-        else rawVegetables.filter { it.contains(searchQuery, ignoreCase = true) || it == "Other" }
-    }
-    val proteins = remember(rawProteins, searchQuery) {
-        if (searchQuery.isBlank()) rawProteins
-        else rawProteins.filter { it.contains(searchQuery, ignoreCase = true) || it == "Other" }
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F5F0))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         LazyColumn(
             modifier = Modifier
@@ -138,6 +146,7 @@ fun IngredientsScreen(
 
                         Spacer(modifier = Modifier.height(Spacing.md))
 
+                        // Search Bar
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -146,12 +155,19 @@ fun IngredientsScreen(
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                placeholder = { Text("Search Ingredients") },
+                                placeholder = { Text("Search Ingredients...") },
                                 leadingIcon = {
                                     Icon(
                                         Icons.Default.Search,
                                         contentDescription = "Search"
                                     )
+                                },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) {
+                                            Icon(Icons.Default.Close, contentDescription = "Clear")
+                                        }
+                                    }
                                 },
                                 shape = RoundedCornerShape(Radius.input),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -170,83 +186,161 @@ fun IngredientsScreen(
                 }
             }
 
-            // 2. Popular Ingredients Section
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.lg)
-                ) {
-                    Text(
-                        text = "POPULAR INGREDIENTS",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = TextSecondary,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+            // Live Search Results
+            if (searchQuery.isNotBlank()) {
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg)
                     ) {
-                        items(popularIngredients) { item ->
-                            val isSelected = item in selectedIngredients
+                        Text(
+                            text = if (isSearching && displaySearchResults.isEmpty()) "SEARCHING..." else "SEARCH RESULTS (${displaySearchResults.size})",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = ButtonGreen,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(Spacing.sm))
 
-                            Surface(
-                                shape = RoundedCornerShape(Radius.card),
-                                color = Color.White,
-                                shadowElevation = 2.dp,
-                                modifier = Modifier.clickable {
-                                    onIngredientToggle(item)
-                                }
+                        if (displaySearchResults.isEmpty() && !isSearching) {
+                            Text(
+                                text = "No matching ingredients found for \"$searchQuery\".",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextSecondary
+                            )
+                            Spacer(modifier = Modifier.height(Spacing.sm))
+                            OutlinedButton(
+                                onClick = onCustomSearchClick,
+                                shape = RoundedCornerShape(Radius.button),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = ButtonGreen),
+                                modifier = Modifier.fillMaxWidth()
                             ) {
+                                Text("Search full database for \"$searchQuery\"")
+                            }
+                        } else {
+                            displaySearchResults.chunked(2).forEach { rowItems ->
                                 Row(
-                                    modifier = Modifier.padding(
-                                        horizontal = Spacing.md,
-                                        vertical = Spacing.sm
-                                    ),
-                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
                                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                                 ) {
-                                    Text(
-                                        text = item,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Checkbox(
-                                        checked = isSelected,
-                                        onCheckedChange = null
-                                    )
+                                    rowItems.forEach { ingredient ->
+                                        val isSelected = selectedIngredients.contains(ingredient)
+                                        Surface(
+                                            shape = RoundedCornerShape(Radius.card),
+                                            color = MaterialTheme.colorScheme.surface,
+                                            shadowElevation = 1.dp,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable { onIngredientToggle(ingredient) }
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .padding(Spacing.md)
+                                                    .fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(
+                                                    text = ingredient,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = TextPrimary
+                                                )
+                                                Checkbox(
+                                                    checked = isSelected,
+                                                    onCheckedChange = null
+                                                )
+                                            }
+                                        }
+                                    }
+                                    if (rowItems.size == 1) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
+            } else {
+                // 2. Popular Section
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Spacing.lg)
+                    ) {
+                        Text(
+                            text = "POPULAR INGREDIENTS",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = TextSecondary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.md)
+                        ) {
+                            items(popularIngredients) { item ->
+                                val isSelected = item in selectedIngredients
 
-            // 3. Vegetables Section
-            item {
-                IngredientCategorySection(
-                    title = "Vegetables",
-                    selectedCount = vegetables.count { it in selectedIngredients },
-                    items = vegetables,
-                    selectedItems = selectedIngredients,
-                    onItemToggle = { item, _ ->
-                        onIngredientToggle(item)
-                    },
-                    onCustomSearchClick = onCustomSearchClick
-                )
-            }
+                                Surface(
+                                    shape = RoundedCornerShape(Radius.card),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shadowElevation = 2.dp,
+                                    modifier = Modifier.clickable {
+                                        onIngredientToggle(item)
+                                    }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(
+                                            horizontal = Spacing.md,
+                                            vertical = Spacing.sm
+                                        ),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                                    ) {
+                                        Text(
+                                            text = item,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Checkbox(
+                                            checked = isSelected,
+                                            onCheckedChange = null
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
-            // 4. Proteins Section
-            item {
-                IngredientCategorySection(
-                    title = "Proteins",
-                    selectedCount = proteins.count { it in selectedIngredients },
-                    items = proteins,
-                    selectedItems = selectedIngredients,
-                    onItemToggle = { item, _ ->
-                        onIngredientToggle(item)
-                    },
-                    onCustomSearchClick = onCustomSearchClick
-                )
+                // 3. Vegetables Section
+                item {
+                    IngredientCategorySection(
+                        title = "Vegetables & Greens",
+                        selectedCount = vegetables.count { it in selectedIngredients },
+                        items = vegetables,
+                        selectedItems = selectedIngredients,
+                        onItemToggle = { item, _ ->
+                            onIngredientToggle(item)
+                        },
+                        onCustomSearchClick = onCustomSearchClick
+                    )
+                }
+
+                // 4. Proteins Section
+                item {
+                    IngredientCategorySection(
+                        title = "Proteins & Meats",
+                        selectedCount = proteins.count { it in selectedIngredients },
+                        items = proteins,
+                        selectedItems = selectedIngredients,
+                        onItemToggle = { item, _ ->
+                            onIngredientToggle(item)
+                        },
+                        onCustomSearchClick = onCustomSearchClick
+                    )
+                }
             }
 
             item {
@@ -254,7 +348,7 @@ fun IngredientsScreen(
             }
         }
 
-        // 5. Bottom Fixed Container (Button + SageBottomBar)
+        // Bottom Action Bar
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -379,7 +473,7 @@ fun IngredientCategorySection(
 
                         Surface(
                             shape = RoundedCornerShape(Radius.card),
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.surface,
                             shadowElevation = 1.dp,
                             modifier = Modifier
                                 .weight(1f)

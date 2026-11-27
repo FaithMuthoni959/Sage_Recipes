@@ -42,6 +42,12 @@ class ProfileFragment : Fragment() {
                                 .addToBackStack(null)
                                 .commit()
                         },
+                        onDietaryPreferencesClick = {
+                            parentFragmentManager.beginTransaction()
+                                .replace(R.id.fragment_container, DietaryPreferencesFragment())
+                                .addToBackStack(null)
+                                .commit()
+                        },
                         onAccountSettingsClick = {
                             parentFragmentManager.beginTransaction()
                                 .replace(R.id.fragment_container, AccountSettingsFragment())

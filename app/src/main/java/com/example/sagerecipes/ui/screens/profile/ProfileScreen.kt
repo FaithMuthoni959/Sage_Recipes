@@ -28,6 +28,7 @@ fun ProfileScreen(
     userEmail: String = "",
     onFavoriteRecipesClick: () -> Unit,
     onPantryInventoryClick: () -> Unit,
+    onDietaryPreferencesClick: () -> Unit = {},
     onAccountSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onBottomNavSelected: (Int) -> Unit
@@ -35,7 +36,7 @@ fun ProfileScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F5F0)) // Cream background
+            .background(MaterialTheme.colorScheme.background)
     ) {
         LazyColumn(
             modifier = Modifier
@@ -66,7 +67,7 @@ fun ProfileScreen(
             item {
                 Card(
                     shape = RoundedCornerShape(Radius.card),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -147,7 +148,7 @@ fun ProfileScreen(
 
                     ProfileOptionRow(icon = Icons.Default.Favorite, title = "Favorite Recipes", onClick = onFavoriteRecipesClick)
                     ProfileOptionRow(icon = Icons.Default.ShoppingCart, title = "Pantry Inventory", onClick = onPantryInventoryClick)
-                    ProfileOptionRow(icon = Icons.Default.Star, title = "Dietary Preferences", onClick = onAccountSettingsClick)
+                    ProfileOptionRow(icon = Icons.Default.Star, title = "Dietary Preferences", onClick = onDietaryPreferencesClick)
                     ProfileOptionRow(icon = Icons.Default.Settings, title = "Account Settings", onClick = onAccountSettingsClick)
                     ProfileOptionRow(icon = Icons.AutoMirrored.Filled.ExitToApp, title = "Log Out", tint = Color.Red, onClick = onLogoutClick)
                 }
@@ -176,7 +177,7 @@ fun ProfileOptionRow(
 ) {
     Card(
         shape = RoundedCornerShape(Radius.card),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier
             .fillMaxWidth()

@@ -51,6 +51,12 @@ class HomeFragment : Fragment() {
                                 .addToBackStack(null)
                                 .commit()
                         },
+                        onAboutClick = {
+                            parentFragmentManager.beginTransaction()
+                                .replace(R.id.fragment_container, AboutSageRecipesFragment())
+                                .addToBackStack(null)
+                                .commit()
+                        },
                         onLogoutClick = {
                             parentFragmentManager.beginTransaction()
                                 .replace(R.id.fragment_container, LoginFragment())

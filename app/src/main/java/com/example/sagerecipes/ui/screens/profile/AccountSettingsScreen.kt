@@ -32,16 +32,17 @@ fun AccountSettingsScreen(
     selectedIndex: Int = 3,
     onBottomNavSelected: (Int) -> Unit = {}
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var name by remember(initialName) { mutableStateOf((initialName)) }
     var email by remember(initialEmail) { mutableStateOf(initialEmail) }
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
-    var isDarkMode by remember { mutableStateOf(false) }
+    val isDarkMode = ThemeManager.isDarkMode
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7F5F0))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -150,7 +151,9 @@ fun AccountSettingsScreen(
                     )
                     Switch(
                         checked = isDarkMode,
-                        onCheckedChange = { isDarkMode = it },
+                        onCheckedChange = { enabled ->
+                            ThemeManager.setDarkMode(context, enabled)
+                        },
                         colors = SwitchDefaults.colors(checkedThumbColor = ButtonGreen, checkedTrackColor = ButtonGreen.copy(alpha = 0.5f))
                     )
                 }

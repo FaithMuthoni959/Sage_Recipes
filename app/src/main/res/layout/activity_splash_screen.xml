@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/button_green"
-    android:layout_gravity="center"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:gravity="center">
 
     <ImageView
-        android:layout_width="440dp"
-        android:layout_height="458dp"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:layout_centerInParent="true"
         android:contentDescription="Sage Recipes"
         android:src="@drawable/sage_recipes_logo" />
 
-
-</LinearLayout>
+</RelativeLayout>

@@ -1,20 +1,33 @@
 package com.example.sagerecipes.ui.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.sagerecipes.R
 import com.example.sagerecipes.ui.theme.*
+
+data class BottomNavItem(
+    val label: String,
+    val selectedIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    val unselectedIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    val index: Int
+)
 
 @Composable
 fun SageBottomBar(
@@ -26,18 +39,21 @@ fun SageBottomBar(
         tonalElevation = 8.dp
     ) {
         val items = listOf(
-            Triple("Home", R.drawable.ic_home, 0),
-            Triple("Favorites", R.drawable.ic_favourites, 1),
-            Triple("Pantry", R.drawable.ic_cart, 2),
-            Triple("Profile", R.drawable.ic_profile, 3)
+            BottomNavItem("Home", Icons.Filled.Home, Icons.Outlined.Home, 0),
+            BottomNavItem("Favorites", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder, 1),
+            BottomNavItem("Pantry", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart, 2),
+            BottomNavItem("Profile", Icons.Filled.Person, Icons.Outlined.Person, 3)
         )
 
-        items.forEach { (label, iconRes, index) ->
-            val isSelected = selectedIndex == index
+        items.forEach { item ->
+            val isSelected = selectedIndex == item.index
             NavigationBarItem(
                 selected = isSelected,
-                onClick = { onTabSelected(index) },
+                onClick = { onTabSelected(item.index) },
                 icon = {
+                    val iconVector = if (isSelected) item.selectedIcon else item.unselectedIcon
+                    val tintColor = if (isSelected) ButtonGreen else TextSecondary
+
                     if (isSelected) {
                         Box(
                             modifier = Modifier
@@ -46,23 +62,25 @@ fun SageBottomBar(
                                 .padding(horizontal = 16.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Image(
-                                painter = painterResource(id = iconRes),
-                                contentDescription = label,
-                                modifier = Modifier.size(26.dp)
+                            Icon(
+                                imageVector = iconVector,
+                                contentDescription = item.label,
+                                tint = tintColor,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     } else {
-                        Image(
-                            painter = painterResource(id = iconRes),
-                            contentDescription = label,
-                            modifier = Modifier.size(26.dp)
+                        Icon(
+                            imageVector = iconVector,
+                            contentDescription = item.label,
+                            tint = tintColor,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 },
                 label = {
                     Text(
-                        text = label,
+                        text = item.label,
                         color = if (isSelected) ButtonGreen else TextSecondary,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     )
