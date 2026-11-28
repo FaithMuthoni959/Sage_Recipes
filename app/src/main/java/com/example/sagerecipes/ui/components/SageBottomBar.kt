@@ -35,7 +35,7 @@ fun SageBottomBar(
     onTabSelected: (Int) -> Unit
 ) {
     NavigationBar(
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 8.dp
     ) {
         val items = listOf(
@@ -47,12 +47,13 @@ fun SageBottomBar(
 
         items.forEach { item ->
             val isSelected = selectedIndex == item.index
+            val unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             NavigationBarItem(
                 selected = isSelected,
                 onClick = { onTabSelected(item.index) },
                 icon = {
                     val iconVector = if (isSelected) item.selectedIcon else item.unselectedIcon
-                    val tintColor = if (isSelected) ButtonGreen else TextSecondary
+                    val tintColor = if (isSelected) ButtonGreen else unselectedContentColor
 
                     if (isSelected) {
                         Box(
@@ -81,7 +82,7 @@ fun SageBottomBar(
                 label = {
                     Text(
                         text = item.label,
-                        color = if (isSelected) ButtonGreen else TextSecondary,
+                        color = if (isSelected) ButtonGreen else unselectedContentColor,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     )
                 },

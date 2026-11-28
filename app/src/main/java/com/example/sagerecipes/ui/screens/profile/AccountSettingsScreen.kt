@@ -138,7 +138,7 @@ fun AccountSettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White, RoundedCornerShape(Radius.card))
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(Radius.card))
                         .padding(Spacing.md),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -147,7 +147,7 @@ fun AccountSettingsScreen(
                         text = if (isDarkMode) "Dark Theme" else "Light Theme",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Switch(
                         checked = isDarkMode,

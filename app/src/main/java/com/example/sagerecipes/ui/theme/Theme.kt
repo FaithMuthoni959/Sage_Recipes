@@ -13,24 +13,24 @@ private val LightColorScheme = lightColorScheme(
     secondary = ChipSelectedBg,
     background = Color(0xFFF7F5F0),
     surface = Color.White,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary,
+    onBackground = Color(0xFF2D2D2D),
+    onSurface = Color(0xFF2D2D2D),
     surfaceVariant = Color(0xFFFDFBF7),
-    onSurfaceVariant = TextSecondary,
+    onSurfaceVariant = Color(0xFF6B7280),
     outline = Color(0xFFE2F0D9)
 )
 
 private val DarkColorScheme = darkColorScheme(
     primary = ButtonGreen,
     onPrimary = Color.White,
-    secondary = Color(0xFF2E3B2B),
-    background = Color(0xFF121212),
-    surface = Color(0xFF1E1E1E),
-    onBackground = Color(0xFFE6E6E6),
-    onSurface = Color(0xFFE6E6E6),
-    surfaceVariant = Color(0xFF262626),
-    onSurfaceVariant = Color(0xFFB3B3B3),
-    outline = Color(0xFF2E3B2B)
+    secondary = Color(0xFF48633B),
+    background = Color(0xFF222222),      // Smooth dark background
+    surface = Color(0xFF363636),         // User requested #363636 surface card color
+    onBackground = Color.White,          // White text for dark background
+    onSurface = Color.White,             // White text on dark cards
+    surfaceVariant = Color(0xFF2D2D2D),
+    onSurfaceVariant = Color(0xFFD0D0D0), // Off-white secondary text
+    outline = Color(0xFF48633B)
 )
 
 @Composable
